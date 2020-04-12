@@ -192,6 +192,7 @@ class TranslationTask(FairseqTask):
         parser.add_argument('--eval-bleu-remove-bpe', nargs='?', const='@@ ', default=None,
                             help='remove BPE before computing BLEU')
         parser.add_argument('--eval-bleu-args', type=str, metavar='JSON',
+                            default='{"beam": 5, "max_len_a": 1.2, "max_len_b": 10}',
                             help='generation args for BLUE scoring, '
                                  'e.g., \'{"beam": 4, "lenpen": 0.6}\'')
         parser.add_argument('--eval-bleu-print-samples', action='store_true',

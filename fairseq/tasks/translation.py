@@ -201,6 +201,9 @@ class TranslationTask(FairseqTask):
         parser.add_argument('--mask-layer-name', type=str, default=None, help="enc-enc or enc-dec or dec-dec")
         parser.add_argument('--mask-layer', type=int, default=0, metavar='N', help='Mask layer number')
         parser.add_argument('--mask-head', type=int, default=0, metavar='N', help='Mask head number')
+
+        parser.add_argument('--enc-layer-configuration', type=str, default=None, help="MHA as A and FFN as F")
+        parser.add_argument('--dec-layer-configuration', type=str, default=None, help="MHA as A and FFN as F")
         # fmt: on
 
     def __init__(self, args, src_dict, tgt_dict):

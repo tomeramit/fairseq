@@ -28,6 +28,8 @@ from fairseq.modules import (
 )
 from torch import Tensor
 
+from fairseq.modules.transformer_layer import TransformerEncoderLayerFFN, TransformerEncoderLayerMHA, \
+    TransformerDecoderLayerMHA, TransformerDecoderLayerFFN
 
 DEFAULT_MAX_SOURCE_POSITIONS = 1024
 DEFAULT_MAX_TARGET_POSITIONS = 1024
@@ -398,10 +400,19 @@ class TransformerEncoder(FairseqEncoder):
         self.layer_wise_attention = getattr(args, "layer_wise_attention", False)
 
         self.layers = nn.ModuleList([])
-        self.layers_list = [self.build_encoder_layer(args) for _ in range(args.encoder_layers)]
 
-        if args.mask_layer_name == "enc-enc":
-            self.layers_list[args.mask_layer].mask_head(args.mask_head)
+        if args.enc_layer_configuration is not None:
+            self.layers_list = []
+            for char in args.enc_layer_configuration:
+                if char == "F":
+                    self.layers_list.append(self.build_encoder_FFN_layer(args))
+                if char == "A":
+                    self.layers_list.append(self.build_encoder_MHA_layer(args))
+        else:
+            self.layers_list = [self.build_encoder_layer(args) for _ in range(args.encoder_layers)]
+
+            if args.mask_layer_name == "enc-enc":
+                self.layers_list[args.mask_layer].mask_head(args.mask_head)
 
         self.layers.extend(self.layers_list)
         self.num_layers = len(self.layers)
@@ -417,6 +428,12 @@ class TransformerEncoder(FairseqEncoder):
 
     def build_encoder_layer(self, args):
         return TransformerEncoderLayer(args)
+
+    def build_encoder_FFN_layer(self, args):
+        return TransformerEncoderLayerFFN(args)
+
+    def build_encoder_MHA_layer(self, args):
+        return TransformerEncoderLayerMHA(args)
 
     def forward_embedding(self, src_tokens):
         # embed tokens and positions
@@ -647,13 +664,21 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         self.layer_wise_attention = getattr(args, "layer_wise_attention", False)
 
         self.layers = nn.ModuleList([])
-        self.layers_list = [self.build_decoder_layer(args, no_encoder_attn) for _ in range(args.decoder_layers)]
 
-        if args.mask_layer_name == "enc-dec":
-            self.layers_list[args.mask_layer].mask_enc_dec_head(args.mask_head)
+        if args.dec_layer_configuration is not None:
+            self.layers_list = []
+            for char in args.dec_layer_configuration:
+                if char == "F":
+                    self.layers_list.append(self.build_decoder_FFN_layer(args, no_encoder_attn))
+                if char == "A":
+                    self.layers_list.append(self.build_decoder_MHA_layer(args, no_encoder_attn))
+        else:
+            self.layers_list = [self.build_decoder_layer(args, no_encoder_attn) for _ in range(args.encoder_layers)]
+            if args.mask_layer_name == "enc-dec":
+                self.layers_list[args.mask_layer].mask_enc_dec_head(args.mask_head)
 
-        if args.mask_layer_name == "dec-dec":
-            self.layers_list[args.mask_layer].mask_dec_dec_head(args.mask_head)
+            if args.mask_layer_name == "dec-dec":
+                self.layers_list[args.mask_layer].mask_dec_dec_head(args.mask_head)
 
         self.layers.extend(self.layers_list)
         self.num_layers = len(self.layers)
@@ -695,6 +720,12 @@ class TransformerDecoder(FairseqIncrementalDecoder):
 
     def build_decoder_layer(self, args, no_encoder_attn=False):
         return TransformerDecoderLayer(args, no_encoder_attn)
+
+    def build_decoder_FFN_layer(self, args, no_encoder_attn=False):
+        return TransformerDecoderLayerFFN(args, no_encoder_attn)
+
+    def build_decoder_MHA_layer(self, args, no_encoder_attn=False):
+        return TransformerDecoderLayerMHA(args, no_encoder_attn)
 
     def forward(
         self,

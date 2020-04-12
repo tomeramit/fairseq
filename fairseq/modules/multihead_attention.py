@@ -32,7 +32,7 @@ class MultiheadAttention(nn.Module):
         add_bias_kv=False,
         add_zero_attn=False,
         self_attention=False,
-        encoder_decoder_attention=False,
+        encoder_decoder_attention=False
     ):
         super().__init__()
         self.embed_dim = embed_dim
@@ -74,10 +74,11 @@ class MultiheadAttention(nn.Module):
         self.onnx_trace = False
 
         self.enable_torch_version = False
-        if hasattr(F, "multi_head_attention_forward"):
-            self.enable_torch_version = True
-        else:
-            self.enable_torch_version = False
+
+        # if hasattr(F, "multi_head_attention_forward"):
+        #     self.enable_torch_version = True
+        # else:
+        #     self.enable_torch_version = False
 
     def prepare_for_onnx_export_(self):
         self.onnx_trace = True
@@ -114,6 +115,7 @@ class MultiheadAttention(nn.Module):
         attn_mask: Optional[Tensor] = None,
         before_softmax: bool = False,
         need_head_weights: bool = False,
+        head_to_mask: int = None
     ) -> Tuple[Tensor, Optional[Tensor]]:
         """Input shape: Time x Batch x Channel
 
@@ -144,9 +146,6 @@ class MultiheadAttention(nn.Module):
             and not self.onnx_trace
             and incremental_state is None
             and not static_kv
-            # A workaround for quantization to work. Otherwise JIT compilation
-            # treats bias in linear module as method.
-            and not torch.jit.is_scripting()
         ):
             assert key is not None and value is not None
             return F.multi_head_attention_forward(
@@ -344,6 +343,8 @@ class MultiheadAttention(nn.Module):
         assert v is not None
         attn = torch.bmm(attn_probs, v)
         assert list(attn.size()) == [bsz * self.num_heads, tgt_len, self.head_dim]
+        if head_to_mask is not None:
+            attn[head_to_mask * bsz: (head_to_mask + 1) * bsz, :, :] = 0
         if self.onnx_trace and attn.size(1) == 1:
             # when ONNX tracing a single decoder step (sequence length == 1)
             # the transpose is a no-op copy before view, thus unnecessary

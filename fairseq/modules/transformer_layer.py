@@ -45,6 +45,10 @@ class TransformerEncoderLayer(nn.Module):
         self.fc1 = self.build_fc1(self.embed_dim, args.encoder_ffn_embed_dim)
         self.fc2 = self.build_fc2(args.encoder_ffn_embed_dim, self.embed_dim)
         self.final_layer_norm = LayerNorm(self.embed_dim)
+        self.head_to_mask = None
+
+    def mask_head(self, number):
+        self.head_to_mask = number
 
     def build_fc1(self, input_dim, output_dim):
         return nn.Linear(input_dim, output_dim)
@@ -57,7 +61,7 @@ class TransformerEncoderLayer(nn.Module):
             embed_dim,
             args.encoder_attention_heads,
             dropout=args.attention_dropout,
-            self_attention=True,
+            self_attention=True
         )
 
     def upgrade_state_dict_named(self, state_dict, name):
@@ -108,7 +112,9 @@ class TransformerEncoderLayer(nn.Module):
             value=x,
             key_padding_mask=encoder_padding_mask,
             attn_mask=attn_mask,
+            head_to_mask=self.head_to_mask
         )
+
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = residual + x
         if not self.normalize_before:
@@ -187,6 +193,14 @@ class TransformerDecoderLayer(nn.Module):
         self.need_attn = True
 
         self.onnx_trace = False
+        self.enc_dec_head_to_mask = None
+        self.dec_dec_head_to_mask = None
+
+    def mask_enc_dec_head(self, head_number):
+        self.enc_dec_head_to_mask = head_number
+
+    def mask_dec_dec_head(self, head_number):
+        self.dec_dec_head_to_mask = head_number
 
     def build_fc1(self, input_dim, output_dim):
         return nn.Linear(input_dim, output_dim)
@@ -292,6 +306,7 @@ class TransformerDecoderLayer(nn.Module):
             incremental_state=incremental_state,
             need_weights=False,
             attn_mask=self_attn_mask,
+            head_to_mask=self.dec_dec_head_to_mask
         )
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = residual + x
@@ -322,6 +337,7 @@ class TransformerDecoderLayer(nn.Module):
                 static_kv=True,
                 need_weights=need_attn or (not self.training and self.need_attn),
                 need_head_weights=need_head_weights,
+                head_to_mask=self.enc_dec_head_to_mask
             )
             x = F.dropout(x, p=self.dropout, training=self.training)
             x = residual + x

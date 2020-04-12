@@ -162,6 +162,7 @@ class TransformerModel(FairseqEncoderDecoderModel):
                             help='add layernorm to embedding')
         parser.add_argument('--no-scale-embedding', action='store_true',
                             help='if True, dont scale embeddings')
+
         # fmt: on
 
     @classmethod
@@ -397,9 +398,12 @@ class TransformerEncoder(FairseqEncoder):
         self.layer_wise_attention = getattr(args, "layer_wise_attention", False)
 
         self.layers = nn.ModuleList([])
-        self.layers.extend(
-            [self.build_encoder_layer(args) for i in range(args.encoder_layers)]
-        )
+        self.layers_list = [self.build_encoder_layer(args) for _ in range(args.encoder_layers)]
+
+        if args.mask_layer_name == "enc-enc":
+            self.layers_list[args.mask_layer].mask_head(args.mask_head)
+
+        self.layers.extend(self.layers_list)
         self.num_layers = len(self.layers)
 
         if args.encoder_normalize_before:
@@ -643,12 +647,15 @@ class TransformerDecoder(FairseqIncrementalDecoder):
         self.layer_wise_attention = getattr(args, "layer_wise_attention", False)
 
         self.layers = nn.ModuleList([])
-        self.layers.extend(
-            [
-                self.build_decoder_layer(args, no_encoder_attn)
-                for _ in range(args.decoder_layers)
-            ]
-        )
+        self.layers_list = [self.build_decoder_layer(args, no_encoder_attn) for _ in range(args.decoder_layers)]
+
+        if args.mask_layer_name == "enc-dec":
+            self.layers_list[args.mask_layer].mask_enc_dec_head(args.mask_head)
+
+        if args.mask_layer_name == "dec-dec":
+            self.layers_list[args.mask_layer].mask_dec_dec_head(args.mask_head)
+
+        self.layers.extend(self.layers_list)
         self.num_layers = len(self.layers)
 
         self.adaptive_softmax = None

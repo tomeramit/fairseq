@@ -673,7 +673,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
                 if char == "A":
                     self.layers_list.append(self.build_decoder_MHA_layer(args, no_encoder_attn))
         else:
-            self.layers_list = [self.build_decoder_layer(args, no_encoder_attn) for _ in range(args.encoder_layers)]
+            self.layers_list = [self.build_decoder_layer(args, no_encoder_attn) for _ in range(args.decoder_layers)]
             if args.mask_layer_name == "enc-dec":
                 self.layers_list[args.mask_layer].mask_enc_dec_head(args.mask_head)
 

@@ -344,7 +344,9 @@ class MultiheadAttention(nn.Module):
         attn = torch.bmm(attn_probs, v)
         assert list(attn.size()) == [bsz * self.num_heads, tgt_len, self.head_dim]
         if head_to_mask is not None:
-            attn[head_to_mask * bsz: (head_to_mask + 1) * bsz, :, :] = 0
+            attn = attn.view(self.num_heads, bsz, tgt_len, self.head_dim)
+            attn[head_to_mask, :, :, :] = 0
+            attn = attn.view(bsz * self.num_heads, tgt_len, self.head_dim)
         if self.onnx_trace and attn.size(1) == 1:
             # when ONNX tracing a single decoder step (sequence length == 1)
             # the transpose is a no-op copy before view, thus unnecessary

@@ -5,7 +5,7 @@ pass max-epoch to decide the max epochs to run batch-size to increase batch size
 CUDA_VISIBLE_DEVICES=4 python train.py data-bin/iwslt14.tokenized.de-en --arch transformer_iwslt_de_en --save-dir enc --adam-betas "(0.9, 0.98)" --max-epoch 100 --batch-size 256 --share-decoder-input-output-embed --optimizer adam --clip-norm 0.0 --lr 5e-4 --lr-scheduler inverse_sqrt --warmup-updates 4000 --dropout 0.3 --weight-decay 0.0001 --criterion label_smoothed_cross_entropy --label-smoothing 0.1 --max-tokens 4096 --eval-bleu --eval-bleu-detok moses --eval-bleu-remove-bpe --eval-bleu-print-samples --best-checkpoint-metric bleu --maximize-best-checkpoint-metric --eval-tokenized-bleu
 
 for evaluation (run generate.py)
-CUDA_VISIBLE_DEVICES=4 python generate.py data-bin/iwslt14.tokenized.de-en --path checkpoints/checkpoint50n.pt --batch-size 128 --beam 5 --remove-bpe
+CUDA_VISIBLE_DEVICES=4 python generate.py data-bin/iwslt14.tokenized.de-en --path checkpoints/checkpoint50.pt --batch-size 128 --beam 5 --remove-bpe
 
 example of results in different epochs:
 python generate.py data-bin/iwslt14.tokenized.de-en --path checkpoints_base_model/checkpoint100.pt --batch-size 128 --beam 5 --remove-bpe
@@ -37,12 +37,15 @@ CUDA_VISIBLE_DEVICES=3 python train.py data-bin/iwslt14.tokenized.de-en --arch t
 
 
 
-use perplexity/ cross entropy loss
-reshape line 347 to head and bz
-max tokens 8096
-test eval for masking with script for all options
-set the seed and run the regular configuration 'AF' * 6 with regular launch
-decoder all F before and all A last - see bad results (around 5bleu)
+use perplexity/ cross entropy loss - done
+reshape line 347 to head and bz - done
+max tokens 8096 - done
+set the seed and run the regular configuration 'AF' * 6 with regular launch - done
+decoder all F before and all A last - see bad results (around 5bleu) - done
+
+create a script for running all options of head masking
+fix eval on school pcs
+change for hebrew
 
 build instructions for ex:
 go to this file and follow the train
@@ -76,4 +79,10 @@ Generate test with beam=5: BLEU4 = 34.32, 68.8/42.9/28.8/19.7 (BP=0.954, ratio=0
 
 CUDA_VISIBLE_DEVICES=6 python generate.py data-bin/iwslt14.tokenized.de-en --path encoder_decoder_swap/checkpoint50.pt --batch-size 128 --beam 5 --remove-bpe
 Generate test with beam=5: BLEU4 = 32.41, 68.4/41.8/27.5/18.4 (BP=0.934, ratio=0.936, syslen=122759, reflen=131161)
+
+train with perplexity
+data-bin/iwslt14.tokenized.de-en --arch transformer_iwslt_de_en --save-dir try --adam-betas "(0.9, 0.98)" --max-epoch 50 --share-decoder-input-output-embed --optimizer adam --clip-norm 0.0 --lr 5e-4 --lr-scheduler inverse_sqrt --warmup-updates 4000 --dropout 0.3 --weight-decay 0.0001 --criterion label_smoothed_cross_entropy --label-smoothing 0.1 --max-tokens 12288 --best-checkpoint-metric ppl --maximize-best-checkpoint-metric --fp16
+epoch 050 | loss 3.207 | nll_loss 1.678 | ppl 3.2 | wps 52344.4 | ups 5.02 | wpb 10419.8 | bsz 422.8 | num_updates 18945 | lr 0.000229749 | gnorm 0.632 | loss_scale 8 | train_wall 61 | wall 3815
+
+data-bin/iwslt14.tokenized.de-en --path try/checkpoint_best.pt --batch-size 128 --beam 5 --remove-bpe
 

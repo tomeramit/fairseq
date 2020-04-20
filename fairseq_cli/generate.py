@@ -180,9 +180,9 @@ def _main(args, output_file):
 
             if not args.quiet:
                 if src_dict is not None:
-                    print('S-{}\t{}'.format(sample_id, src_str), file=output_file)
+                    print('S-{}\t{}'.format(sample_id, src_str).encode('latin-1', 'replace'), file=output_file)
                 if has_target:
-                    print('T-{}\t{}'.format(sample_id, target_str), file=output_file)
+                    print('T-{}\t{}'.format(sample_id, target_str).encode('latin-1', 'replace'), file=output_file)
 
             # Process top predictions
             for j, hypo in enumerate(hypos[i][:args.nbest]):

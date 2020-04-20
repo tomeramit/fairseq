@@ -29,7 +29,9 @@ mask-layer number of layer to mask the head of
 mask-head number of head to mask
 
 for example
-CUDA_VISIBLE_DEVICES=4 python generate.py data-bin/iwslt14.tokenized.de-en --path checkpoints/checkpoint100.pt --batch-size 128 --beam 5 --remove-bpe --model-overrides "{'mask_layer': 5, 'mask_head': 3, 'mask_layer_name': 'enc-dec'}"
+CUDA_VISIBLE_DEVICES=4 python generate.py data-bin/iwslt14.tokenized.de-en --path checkpoints_base_model/checkpoint_best.pt --batch-size 128 --beam 5 --remove-bpe --model-overrides "{'mask_layer': 5, 'mask_head': 3, 'mask_layer_name': 'enc-dec'}"
+
+CUDA_VISIBLE_DEVICES=2 python check_all_masking_options.py data-bin/iwslt14.tokenized.de-en --path checkpoints_base_model/checkpoint_best.pt --batch-size 128 --beam 5 --remove-bpe --fp16
 
 running with sandwich (with A,F configuration) for example:
 CUDA_VISIBLE_DEVICES=4 python train.py data-bin/iwslt14.tokenized.de-en --arch transformer_iwslt_de_en --save-dir enc --adam-betas "(0.9, 0.98)" --max-epoch 100 --batch-size 256 --share-decoder-input-output-embed --optimizer adam --clip-norm 0.0 --lr 5e-4 --lr-scheduler inverse_sqrt --warmup-updates 4000 --dropout 0.3 --weight-decay 0.0001 --criterion label_smoothed_cross_entropy --label-smoothing 0.1 --max-tokens 4096 --eval-bleu --eval-bleu-detok moses --eval-bleu-remove-bpe --eval-bleu-print-samples --best-checkpoint-metric bleu --maximize-best-checkpoint-metric --eval-tokenized-bleu --enc-layer-configuration 'AAAFAFAFAFFF'
@@ -44,7 +46,7 @@ set the seed and run the regular configuration 'AF' * 6 with regular launch - do
 decoder all F before and all A last - see bad results (around 5bleu) - done
 
 create a script for running all options of head masking
-fix eval on school pcs
+fix eval on school pcs - done
 change for hebrew
 
 build instructions for ex:

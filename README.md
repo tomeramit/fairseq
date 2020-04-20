@@ -11,9 +11,10 @@ cd apex
 pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" --global-option="--deprecated_fused_adam" --global-option="--xentropy" --global-option="--fast_multihead_attn" ./
 ```
 
-To install fairseq:
+To install fairseq and pandas:
 ```bash
 pip install fairseq
+pip install pandas
 ```
 
 ## Training a baseline model on IWSLT'14 German to English
@@ -59,9 +60,7 @@ we use perplexity (--best-checkpoint-metric ppl) as checkpoint metric
 
 Finally we can evaluate our trained model:
 ```
-CUDA_VISIBLE_DEVICES=0 python generate.py data-bin/iwslt14.tokenized.de-en \
-    --path baseline/checkpoint_best.pt \
-    --batch-size 128 --beam 5 --remove-bpe
+CUDA_VISIBLE_DEVICES=0 python generate.py data-bin/iwslt14.tokenized.de-en --path baseline/checkpoint_best.pt --batch-size 128 --beam 5 --remove-bpe --fp16
 ```
 
 the perplexity for the best model (after 50 epochs) should be ****
@@ -73,7 +72,8 @@ In this part of the excersice, we will see the effect of masking different heads
 ```
 CUDA_VISIBLE_DEVICES=0 python generate.py data-bin/iwslt14.tokenized.de-en \
     --path baseline/checkpoint_best.pt \
-    --batch-size 128 --beam 5 --remove-bpe
+    --batch-size 128 --beam 5 --remove-bpe \
+	--fp16 \
     --model-overrides "{'mask_layer': 5, 'mask_head': 3, 'mask_layer_name': 'enc-dec'}"
 ```
 mask_layer is the layer number to mask
@@ -84,10 +84,14 @@ mask_layer_name is the name of the attention to mask - 'enc-enc' is the transfor
 
 follow this arguments to see their impact.
 
-in the end, the mask_head argument, turn into head_to_mask on the function forward in the multihead_attention.py file.
+in the end, the mask_head argument, turn into head_to_mask variable on the function forward in the multihead_attention.py file.
 your task is to implement the mask part inside the forward function (1-3 lines)
 
-**option 1: create a script to launch all the evalutation with all the possibilities of masking (or maybe they will use my script)**
+finally after everything is ready, execute check_all_masking_options.py that execute mask of each attention head in each transformer to see it's impact
+
+```
+CUDA_VISIBLE_DEVICES=0 python check_all_masking_options.py data-bin/iwslt14.tokenized.de-en --path baseline/checkpoint_best.pt --batch-size 128 --beam 5 --remove-bpe --fp16
+```
 
 validate your results and explain them.
 

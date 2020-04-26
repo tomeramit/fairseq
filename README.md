@@ -39,17 +39,22 @@ fairseq-preprocess --source-lang de --target-lang en \
 
 Next we'll train a Transformer translation model over this data:
 ```
-CUDA_VISIBLE_DEVICES=0 python train.py \
+CUDA_VISIBLE_DEVICES=1 python train.py \
     data-bin/iwslt14.tokenized.de-en \
     --arch transformer_iwslt_de_en --share-decoder-input-output-embed \
-    --save-dir baseline
+    --save-dir baseline \
+    --max-epoch 50 \
     --optimizer adam --adam-betas "(0.9, 0.98)" --clip-norm 0.0 \
     --lr 5e-4 --lr-scheduler inverse_sqrt --warmup-updates 4000 \
     --dropout 0.3 --weight-decay 0.0001 \
     --criterion label_smoothed_cross_entropy --label-smoothing 0.1 \
     --max-tokens 12288 \
-    --best-checkpoint-metric ppl 
+    --eval-bleu \
+    --eval-bleu-detok moses \
+    --eval-bleu-remove-bpe --eval-bleu-print-samples \
+    --best-checkpoint-metric ppl \
     --maximize-best-checkpoint-metric \
+    --eval-tokenized-bleu \
     --fp16
 ```
 
@@ -63,7 +68,7 @@ Finally we can evaluate our trained model:
 CUDA_VISIBLE_DEVICES=0 python generate.py data-bin/iwslt14.tokenized.de-en --path baseline/checkpoint_best.pt --batch-size 128 --beam 5 --remove-bpe --fp16
 ```
 
-the perplexity for the best model (after 50 epochs) should be ****
+the bleu for the best model (after 50 epochs) should be ~34.4
 
 ## Masking heads for the baseline model
 
@@ -73,7 +78,7 @@ In this part of the excersice, we will see the effect of masking different heads
 CUDA_VISIBLE_DEVICES=0 python generate.py data-bin/iwslt14.tokenized.de-en \
     --path baseline/checkpoint_best.pt \
     --batch-size 128 --beam 5 --remove-bpe \
-	--fp16 \
+    --fp16 \
     --model-overrides "{'mask_layer': 5, 'mask_head': 3, 'mask_layer_name': 'enc-dec'}"
 ```
 mask_layer is the layer number to mask
@@ -108,16 +113,21 @@ and now we will check another configuration, and see it's result
 CUDA_VISIBLE_DEVICES=0 python train.py \
     data-bin/iwslt14.tokenized.de-en \
     --arch transformer_iwslt_de_en --share-decoder-input-output-embed \
-    --save-dir baseline
+    --save-dir sandwitch \
+    --max-epoch 50 \
     --optimizer adam --adam-betas "(0.9, 0.98)" --clip-norm 0.0 \
     --lr 5e-4 --lr-scheduler inverse_sqrt --warmup-updates 4000 \
     --dropout 0.3 --weight-decay 0.0001 \
     --criterion label_smoothed_cross_entropy --label-smoothing 0.1 \
     --max-tokens 12288 \
-    --best-checkpoint-metric ppl 
+    --eval-bleu \
+    --eval-bleu-detok moses \
+    --eval-bleu-remove-bpe --eval-bleu-print-samples \
+    --best-checkpoint-metric ppl \
     --maximize-best-checkpoint-metric \
+    --eval-tokenized-bleu \
     --fp16 \
-    --enc-layer-configuration 'FFFFFFAAAAAA'
+    --enc-layer-configuration 'FFFFFFAAAAAA' \
     --dec-layer-configuration 'FFFFFFAAAAAA'
 ```
 

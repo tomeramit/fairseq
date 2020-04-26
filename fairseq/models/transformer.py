@@ -411,7 +411,7 @@ class TransformerEncoder(FairseqEncoder):
         else:
             self.layers_list = [self.build_encoder_layer(args) for _ in range(args.encoder_layers)]
 
-            if args.mask_layer_name == "enc-enc":
+            if args.mask_layer_type == "enc-enc":
                 self.layers_list[args.mask_layer].mask_head(args.mask_head)
 
         self.layers.extend(self.layers_list)
@@ -674,10 +674,10 @@ class TransformerDecoder(FairseqIncrementalDecoder):
                     self.layers_list.append(self.build_decoder_MHA_layer(args, no_encoder_attn))
         else:
             self.layers_list = [self.build_decoder_layer(args, no_encoder_attn) for _ in range(args.decoder_layers)]
-            if args.mask_layer_name == "enc-dec":
+            if args.mask_layer_type == "enc-dec":
                 self.layers_list[args.mask_layer].mask_enc_dec_head(args.mask_head)
 
-            if args.mask_layer_name == "dec-dec":
+            if args.mask_layer_type == "dec-dec":
                 self.layers_list[args.mask_layer].mask_dec_dec_head(args.mask_head)
 
         self.layers.extend(self.layers_list)

@@ -65,7 +65,7 @@ we use perplexity (--best-checkpoint-metric ppl) as checkpoint metric
 
 Finally we can evaluate our trained model:
 ```
-CUDA_VISIBLE_DEVICES=0 python generate.py data-bin/iwslt14.tokenized.de-en --path baseline/checkpoint_best.pt --batch-size 128 --beam 5 --remove-bpe --fp16
+CUDA_VISIBLE_DEVICES=4 python generate.py data-bin/iwslt14.tokenized.de-en --path baseline/checkpoint_best.pt --batch-size 128 --beam 5 --remove-bpe --fp16
 ```
 
 the bleu for the best model (after 50 epochs) should be ~34.4
@@ -79,11 +79,11 @@ CUDA_VISIBLE_DEVICES=0 python generate.py data-bin/iwslt14.tokenized.de-en \
     --path baseline/checkpoint_best.pt \
     --batch-size 128 --beam 5 --remove-bpe \
     --fp16 \
-    --model-overrides "{'mask_layer': 5, 'mask_head': 3, 'mask_layer_name': 'enc-dec'}"
+    --model-overrides "{'mask_layer': 5, 'mask_head': 3, 'mask_layer_type': 'enc-dec'}"
 ```
 mask_layer is the layer number to mask
 mask_head is the head number to mask
-mask_layer_name is the name of the attention to mask - 'enc-enc' is the transformer encoder self attention
+mask_layer_type is the name of the attention to mask - 'enc-enc' is the transformer encoder self attention
 													 - 'enc-dec' is the transformer decoder cross attention
 													 - 'dec-dec' is the transformer decoder self attention
 
